@@ -1,0 +1,7 @@
+dist/
+build/
+.keys/
+*.pem
+*.crx
+*.zip
+.DS_Store

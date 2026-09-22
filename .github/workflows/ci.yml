@@ -1,0 +1,95 @@
+name: CI and rolling build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Test
+        run: npm test
+      - name: Static checks
+        run: npm run check
+      - name: Select extension version
+        shell: bash
+        run: |
+          SOURCE_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            MAJOR="${SOURCE_VERSION%%.*}"
+            REST="${SOURCE_VERSION#*.}"
+            MINOR="${REST%%.*}"
+            echo "EXTENSION_VERSION=${MAJOR}.${MINOR}.${GITHUB_RUN_NUMBER}.0" >> "$GITHUB_ENV"
+          else
+            echo "EXTENSION_VERSION=$SOURCE_VERSION" >> "$GITHUB_ENV"
+          fi
+      - name: Build extension
+        run: npm run build
+      - name: Build ZIP
+        run: |
+          mkdir -p build
+          (cd dist && zip -qr ../build/DownloadHelper.zip .)
+      - name: Build signed CRX3
+        if: ${{ secrets.CRX_PRIVATE_KEY_B64 != '' }}
+        env:
+          CRX_PRIVATE_KEY_B64: ${{ secrets.CRX_PRIVATE_KEY_B64 }}
+        run: |
+          mkdir -p .keys build
+          printf '%s' "$CRX_PRIVATE_KEY_B64" | base64 -d > .keys/downloadhelper.pem
+          chmod 600 .keys/downloadhelper.pem
+          VERSION="$EXTENSION_VERSION"
+          npx --yes crx3@2.0.0 dist \
+            --crx build/DownloadHelper.crx \
+            --key .keys/downloadhelper.pem \
+            --xml build/updates.xml \
+            --appVersion "$VERSION" \
+            --crxURL "https://github.com/ZTD38F/DownloadHelper/releases/download/nightly/DownloadHelper.crx"
+          node scripts/extension-id.mjs .keys/downloadhelper.pem > build/extension-id.txt
+          rm -f .keys/downloadhelper.pem
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: DownloadHelper-${{ github.sha }}
+          path: build/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish rolling nightly release
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag -f nightly "$GITHUB_SHA"
+          git push origin -f refs/tags/nightly
+          gh release delete nightly --yes >/dev/null 2>&1 || true
+          files=(build/DownloadHelper.zip)
+          [ -f build/DownloadHelper.crx ] && files+=(build/DownloadHelper.crx)
+          [ -f build/updates.xml ] && files+=(build/updates.xml)
+          [ -f build/extension-id.txt ] && files+=(build/extension-id.txt)
+          gh release create nightly "${files[@]}" \
+            --prerelease \
+            --title "DownloadHelper rolling build" \
+            --notes "Automated build from main at $GITHUB_SHA. ZIP is always produced; CRX3/update manifest are included when the repository signing secret is configured."
+      - name: Publish versioned release
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=(build/DownloadHelper.zip)
+          [ -f build/DownloadHelper.crx ] && files+=(build/DownloadHelper.crx)
+          [ -f build/updates.xml ] && files+=(build/updates.xml)
+          [ -f build/extension-id.txt ] && files+=(build/extension-id.txt)
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" --generate-notes

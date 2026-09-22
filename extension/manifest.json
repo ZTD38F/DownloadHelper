@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "DownloadHelper",
+  "version": "0.1.0",
+  "description": "Local-first media downloader for direct media, HLS and DASH streams.",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "downloads",
+    "storage",
+    "webRequest",
+    "declarativeNetRequest",
+    "offscreen",
+    "unlimitedStorage",
+    "tabs"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "DownloadHelper",
+    "default_popup": "ui/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/detect.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
