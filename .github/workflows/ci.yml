@@ -45,6 +45,18 @@ jobs:
         run: |
           mkdir -p build
           (cd dist && zip -qr ../build/DownloadHelper.zip .)
+      - name: Smoke-test CRX3 packer
+        run: |
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/downloadhelper-test.pem >/dev/null 2>&1
+          node scripts/pack-crx3.mjs \
+            build/DownloadHelper.zip \
+            /tmp/downloadhelper-test.pem \
+            /tmp/DownloadHelper-test.crx \
+            /tmp/updates-test.xml \
+            "https://example.invalid/DownloadHelper.crx" \
+            "$EXTENSION_VERSION" >/tmp/test-extension-id.txt
+          test -s /tmp/DownloadHelper-test.crx
+          test -s /tmp/updates-test.xml
       - name: Build signed CRX3
         if: ${{ env.CRX_PRIVATE_KEY_B64 != '' }}
         run: |
@@ -52,13 +64,13 @@ jobs:
           printf '%s' "$CRX_PRIVATE_KEY_B64" | base64 -d > .keys/downloadhelper.pem
           chmod 600 .keys/downloadhelper.pem
           VERSION="$EXTENSION_VERSION"
-          npx --yes crx3@2.0.0 dist \
-            --crx build/DownloadHelper.crx \
-            --key .keys/downloadhelper.pem \
-            --xml build/updates.xml \
-            --appVersion "$VERSION" \
-            --crxURL "https://github.com/ZTD38F/DownloadHelper/releases/download/nightly/DownloadHelper.crx"
-          node scripts/extension-id.mjs .keys/downloadhelper.pem > build/extension-id.txt
+          node scripts/pack-crx3.mjs \
+            build/DownloadHelper.zip \
+            .keys/downloadhelper.pem \
+            build/DownloadHelper.crx \
+            build/updates.xml \
+            "https://github.com/ZTD38F/DownloadHelper/releases/download/nightly/DownloadHelper.crx" \
+            "$VERSION" > build/extension-id.txt
           cmp -s build/extension-id.txt install/extension-id.txt || { echo 'CRX signing key does not match pinned extension ID'; exit 1; }
           rm -f .keys/downloadhelper.pem
       - name: Upload build artifact

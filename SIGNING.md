@@ -22,3 +22,7 @@ Set it to the Base64 encoding of the PEM private key that matches the manifest p
 - `extension-id.txt`
 
 The workflow verifies that the private signing key derives the pinned extension ID before publishing. A different key fails the build instead of silently changing the extension identity.
+
+## Packer
+
+CRX3 packaging is implemented in `scripts/pack-crx3.mjs` using only Node.js built-in `node:crypto`. It follows Chromium's CRX3 protobuf/header/signature format and performs an internal RSA-SHA256 verification before writing the package. CI smoke-tests this packer with an ephemeral key on every run, independently of the production signing secret.
