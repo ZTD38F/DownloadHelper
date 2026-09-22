@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 $ErrorActionPreference = 'Stop'
 $Base = 'https://github.com/ZTD38F/DownloadHelper/releases/download/nightly'
-$Id = (Invoke-WebRequest "$Base/extension-id.txt" -UseBasicParsing).Content.Trim()
+$Id = 'fbmgfeaacclomopchagckemhdbimfdhm'
 if ($Id -notmatch '^[a-p]{32}$') { throw "Invalid extension ID from release: $Id" }
 $Policy = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist'
 New-Item -Path $Policy -Force | Out-Null

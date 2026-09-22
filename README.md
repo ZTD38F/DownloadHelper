@@ -37,7 +37,7 @@ Every push to `main` is tested and packaged by GitHub Actions. A rolling `nightl
 - `DownloadHelper.crx` — produced when the repository signing secret is configured.
 - `updates.xml` and `extension-id.txt` — produced with the signed CRX.
 
-The signing secret is `CRX_PRIVATE_KEY_B64`: the Base64 form of one persistent RSA private key. **Never commit the private key to this public repository.** Keeping the same key keeps the extension ID stable across updates.
+The pinned extension ID is `fbmgfeaacclomopchagckemhdbimfdhm`. The signing secret is `CRX_PRIVATE_KEY_B64`: the Base64 form of its matching persistent RSA private key. **Never commit the private key to this public repository.** Keeping the same key keeps the extension ID stable across updates. See [SIGNING.md](SIGNING.md).
 
 ## Chrome / Edge installation reality
 

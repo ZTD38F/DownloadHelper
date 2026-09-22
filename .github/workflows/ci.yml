@@ -59,6 +59,7 @@ jobs:
             --appVersion "$VERSION" \
             --crxURL "https://github.com/ZTD38F/DownloadHelper/releases/download/nightly/DownloadHelper.crx"
           node scripts/extension-id.mjs .keys/downloadhelper.pem > build/extension-id.txt
+          cmp -s build/extension-id.txt install/extension-id.txt || { echo 'CRX signing key does not match pinned extension ID'; exit 1; }
           rm -f .keys/downloadhelper.pem
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
