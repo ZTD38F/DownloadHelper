@@ -15,6 +15,8 @@ permissions:
 jobs:
   test-build:
     runs-on: ubuntu-latest
+    env:
+      CRX_PRIVATE_KEY_B64: ${{ secrets.CRX_PRIVATE_KEY_B64 }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v7
@@ -44,9 +46,7 @@ jobs:
           mkdir -p build
           (cd dist && zip -qr ../build/DownloadHelper.zip .)
       - name: Build signed CRX3
-        if: ${{ secrets.CRX_PRIVATE_KEY_B64 != '' }}
-        env:
-          CRX_PRIVATE_KEY_B64: ${{ secrets.CRX_PRIVATE_KEY_B64 }}
+        if: ${{ env.CRX_PRIVATE_KEY_B64 != '' }}
         run: |
           mkdir -p .keys build
           printf '%s' "$CRX_PRIVATE_KEY_B64" | base64 -d > .keys/downloadhelper.pem
