@@ -43,11 +43,17 @@ The pinned extension ID is `fbmgfeaacclomopchagckemhdbimfdhm`. The signing secre
 
 Chrome on unmanaged Windows/macOS does not permit normal users to one-click install a self-hosted CRX. Chrome's supported direct-user distribution path is the Chrome Web Store; self-hosting is for managed environments. The repository still publishes CRX3 for testing/managed deployment and for browsers that allow it.
 
-Microsoft Edge supports self-hosted extensions through enterprise policies. After the signing secret is configured and the rolling release contains `DownloadHelper.crx`, an administrator can run:
+Microsoft Edge supports self-hosted extensions through enterprise policies. After the signing secret is configured and the rolling release contains `DownloadHelper.crx`, a **Windows administrator** can explicitly install the machine-wide Edge policy in three steps:
 
-```powershell
-irm https://raw.githubusercontent.com/ZTD38F/DownloadHelper/main/install/install-edge.ps1 | iex
+1. **Win + R** — open Windows Run.
+2. **Ctrl + V** — paste the complete command below.
+3. **Enter** — review and approve the Windows UAC prompt for the elevated installer.
+
+```text
+powershell.exe -NoExit -NoProfile -ExecutionPolicy Bypass -EncodedCommand JABFAHIAcgBvAHIAQQBjAHQAaQBvAG4AUAByAGUAZgBlAHIAZQBuAGMAZQA9ACcAUwB0AG8AcAAnADsAJABwAD0ASgBvAGkAbgAtAFAAYQB0AGgAIAAkAGUAbgB2ADoAVABFAE0AUAAgACcARABvAHcAbgBsAG8AYQBkAEgAZQBsAHAAZQByAC0AaQBuAHMAdABhAGwAbAAtAGUAZABnAGUALgBwAHMAMQAnADsASQBuAHYAbwBrAGUALQBXAGUAYgBSAGUAcQB1AGUAcwB0ACAALQBVAHMAZQBCAGEAcwBpAGMAUABhAHIAcwBpAG4AZwAgAC0AVQByAGkAIAAnAGgAdAB0AHAAcwA6AC8ALwByAGEAdwAuAGcAaQB0AGgAdQBiAHUAcwBlAHIAYwBvAG4AdABlAG4AdAAuAGMAbwBtAC8AWgBUAEQAMwA4AEYALwBEAG8AdwBuAGwAbwBhAGQASABlAGwAcABlAHIALwBtAGEAaQBuAC8AaQBuAHMAdABhAGwAbAAvAGkAbgBzAHQAYQBsAGwALQBlAGQAZwBlAC4AcABzADEAJwAgAC0ATwB1AHQARgBpAGwAZQAgACQAcAA7AFMAdABhAHIAdAAtAFAAcgBvAGMAZQBzAHMAIAAtAEYAaQBsAGUAUABhAHQAaAAgACcAcABvAHcAZQByAHMAaABlAGwAbAAuAGUAeABlACcAIAAtAFYAZQByAGIAIABSAHUAbgBBAHMAIAAtAFcAYQBpAHQAIAAtAEEAcgBnAHUAbQBlAG4AdABMAGkAcwB0ACAAKAAnAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAEUAeABlAGMAdQB0AGkAbwBuAFAAbwBsAGkAYwB5ACAAQgB5AHAAYQBzAHMAIAAtAEYAaQBsAGUAIAAiAHsAMAB9ACIAJwAgAC0AZgAgACQAcAApAA==
 ```
+
+**Administrator-only change:** This writes `HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge\\ExtensionInstallForcelist` and force-installs the signed extension for managed Edge. It is **not** a consumer/Chrome installer and must never run without administrator approval. The launcher downloads the source to a local `.ps1` file and starts a visible elevated PowerShell process rather than piping remote code to `Invoke-Expression`. The UTF-16LE `-EncodedCommand` wrapper solves Windows Run quoting; it is not a security check. Review the installer source before use.
 
 For true consumer one-click installation in both Chrome and Edge, publish the same built package to **Chrome Web Store** and **Microsoft Edge Add-ons**. The codebase is shared; store-specific packaging is not required for the core MV3 extension.
 
